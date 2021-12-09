@@ -56,7 +56,9 @@ std::set<std::pair<int, int>> not_commutative = {
     {OPERATION, LEFT_BRACKET},
     {RIGHT_BRACKET, OPERATION},
     {LEFT_BRACKET, VALUE},
-    {VALUE, RIGHT_BRACKET}
+    {VALUE, RIGHT_BRACKET},
+    {RIGHT_BRACKET, RIGHT_BRACKET},
+    {LEFT_BRACKET, LEFT_BRACKET}
 };
 
 // Simple classificator.
@@ -152,7 +154,7 @@ std::map<char, int64_t(*)(int64_t&, int64_t&)>
         std::cout << "[type_fail]: failed to apply operation. "\
         << "Expected type: " << e_type << " , actual type: " << a_type\
         << std::endl;\
-        exit(0);\
+        exit(-1);\
     } while(0)
 
 // Reduction functions for operations.
@@ -164,9 +166,11 @@ std::vector<Token>& product_reduction(std::vector<Token>::iterator from,
                                       std::vector<Token>::iterator to)
 {
     static std::vector<Token> result;
+    result.clear();
+
     std::vector<Token>::iterator first  = from,
                                  oper   = first + 1,
-                                 second = oper + 1;
+                                 second = oper  + 1;
 
     if (oper == to || second == to) {
         result.push_back(*from);
@@ -192,7 +196,7 @@ std::vector<Token>& product_reduction(std::vector<Token>::iterator from,
             (first->value, second->value); // application.
 
     oper   = second + 1;
-    second = oper + 1;
+    second = oper   + 1;
 
     while (oper != to && second != to) {
         if (oper->type != OPERATION)
@@ -212,7 +216,7 @@ std::vector<Token>& product_reduction(std::vector<Token>::iterator from,
                 (temp.value, second->value);
         
         oper   = second + 1;
-        second = oper + 1;
+        second = oper   + 1;
     }
     result.push_back(temp);
     return result;
@@ -292,6 +296,9 @@ std::vector<Token>& parse_input(std::string& input)
 int64_t main_reduction(std::vector<Token>::iterator from,
                        std::vector<Token>::iterator to)
 {
+#ifdef DEBUG_LOGGING
+    std::cout << "[call] main_reduction." << std::endl;
+#endif
     // Balance is for right brackets sequences check;
     // by default it is one because it's used only when there is
     // atleast one LEFT_BRACKET. 
@@ -307,8 +314,12 @@ int64_t main_reduction(std::vector<Token>::iterator from,
         }
 
     if (!have_brackets) {
-        std::vector<Token> partial = reduction::product_reduction(from, to);
+        std::vector<Token>::iterator f1 = from, t1 = to;
+        std::vector<Token> partial = reduction::product_reduction(f1, t1);
 #ifdef DEBUG_LOGGING
+        std::cout << "[from-to]:values: " << std::endl;
+        for (auto it = from; it != to; ++it)
+            std::cout << *it << std::endl;
         std::cout << "[main_reduction]:call:debug: have_brackets = false:" << std::endl
         << "[main_reduction]:call:debug: vector<Token>:partial size = "
         << partial.size() << std::endl
@@ -345,6 +356,7 @@ int64_t main_reduction(std::vector<Token>::iterator from,
     }
 
     while (start != to) {
+        std::cout << "temp_end: " << *start << std::endl;
         temp_end.push_back(*start);
         start++;
     }
